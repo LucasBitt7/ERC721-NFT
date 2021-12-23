@@ -1,44 +1,42 @@
-pragma solidity^0.8.0;
-
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
-//import "@openzeppelin/contracts@4.2.0/access/Ownable.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
 
-contract jubirubaNFT is ERC721{
-     constructor() ERC721("SomeItem", "SIM") {}
-
-    uint public tokenId = 0;
-
-    struct Metadata { 
-        uint timestamp;
-        uint tokenId;
-        string tokenURI;
+contract VolcanoCoin is ERC721, Ownable {
+    struct Token {
+      uint256 tokenId;
+      uint256 timestamp;
+      string tokenURI;
     }
 
-    mapping (address => Metadata[]) public ownership;
+    uint256 token_id;
+    mapping(address => Token[]) user_tokens;
+    uint token_counter;
 
-    function mintToken() public {
-        Metadata memory newToken = Metadata({
-            timestamp: block.timestamp,
-            tokenId: tokenId,
-            tokenURI: tokenURI(tokenId)
-            });
-        tokenId++;
-        _safeMint(msg.sender, newToken.tokenId);
-        ownership[msg.sender].push(newToken);
+    constructor() ERC721('VolcanoCoin', 'VLC') {
+        token_counter = 0;
+    }
+    
+    function mint(string memory _tokenURI) public {
+      Token memory token  = Token(token_counter, block.timestamp, _tokenURI);
+      user_tokens[_msgSender()].push(token);
+
+      _safeMint(_msgSender(), token_counter);
+
+      token_counter += 1;
     }
 
-    function burnToken(uint _tokenId) public {
-        require(ownership[msg.sender][_tokenId].tokenId == _tokenId,"you havent this token motherfocka");
-         _burn(_tokenId);
-        for(uint i = 0; i < ownership[msg.sender].length; i++) {
-            if(ownership[msg.sender][_tokenId].tokenId == _tokenId ) {
-                delete ownership[msg.sender][_tokenId];
+    function burn(uint256 _tokenId) public {
+      _burn(_tokenId);
+      deleteToken(_tokenId);
+    }
 
-            }
+    function deleteToken(uint256 _tokenId) internal {
+      for(uint i = 0; i < user_tokens[_msgSender()].length; i++) {
+        if(user_tokens[_msgSender()][i].tokenId == _tokenId) {
+          delete user_tokens[_msgSender()][i];
+          break;
         }
+      }
     }
 
-    function getYourTokens(uint _tokenId) public view returns (Metadata memory) {
-        return ownership[msg.sender][_tokenId];
-    }
 }
